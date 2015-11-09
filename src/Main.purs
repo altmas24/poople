@@ -17,9 +17,11 @@ import qualified Control.Monad.Eff.Console as Console
 import Data.Maybe
 
 type Choice = { title :: String }
-type App = { choices :: List Choice }
+type App = { choices :: List Choice, title :: String }
 
-data Query a = Add a | Remove a
+data Query a = Add a |
+               Remove a |
+               UpdateDescription String a
 
 renderApp :: forall g. (Functor g) => Component App Query g
 renderApp = component render eval where
@@ -27,6 +29,7 @@ renderApp = component render eval where
   render app = H.div_ [
     H.div_
       [ H.h1_ [ H.text "Poople" ]
+      , H.input [ E.onValueChange (E.input UpdateDescription) ]
       , H.button
           [ E.onClick (E.input_ Add) ]
           [ H.text "Add choice" ]
@@ -46,14 +49,20 @@ renderApp = component render eval where
   eval (Remove next) = do
     modify removeChoice
     pure next
+  eval (UpdateDescription desc next) = do
+    modify (updateDescription desc)
+    pure next
+
+updateDescription :: String -> App -> App
+updateDescription title app = app { choices = app.choices, title = title }
 
 addChoice :: App -> App
-addChoice app = app { choices = { title : "Choice title" } : app.choices }
+addChoice app = app { choices = { title : app.title } : app.choices }
 
 removeChoice :: App -> App
 removeChoice app = app { choices = fromMaybe Nil $ tail app.choices }
 
 main :: Eff (HalogenEffects ()) Unit
 main = runAff throwException (const (pure unit)) $ do
-  app <- runUI renderApp { choices : Nil }
+  app <- runUI renderApp { choices : Nil, title: "" }
   appendToBody app.node
