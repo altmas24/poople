@@ -37,7 +37,7 @@ renderApp = component render eval where
     , H.div_ $ fromList $ map renderChoiceView app.choices
     ]
 
-  renderChoiceView choice = H.text "Choice: " -- ++ choice.title
+  renderChoiceView choice = H.h1_ [ H.text $ "Choice: " ++ choice.title]
 
   eval :: Natural Query (ComponentDSL App Query g)
   eval (Add next) = do
