@@ -14,10 +14,12 @@ import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Exception (throwException)
 import qualified Control.Monad.Eff.Console as Console
 
+import Data.Maybe
+
 type Choice = { title :: String }
 type App = { choices :: List Choice }
 
-data Query a = Add a
+data Query a = Add a | Remove a
 
 renderApp :: forall g. (Functor g) => Component App Query g
 renderApp = component render eval where
@@ -28,6 +30,9 @@ renderApp = component render eval where
       , H.button
           [ E.onClick (E.input_ Add) ]
           [ H.text "Add choice" ]
+      , H.button
+          [ E.onClick (E.input_ Remove) ]
+          [ H.text "Remove choice" ]
       ]
     , H.div_ $ fromList $ map renderChoiceView app.choices
     ]
@@ -38,9 +43,15 @@ renderApp = component render eval where
   eval (Add next) = do
     modify addChoice
     pure next
+  eval (Remove next) = do
+    modify removeChoice
+    pure next
 
 addChoice :: App -> App
 addChoice app = app { choices = { title : "Choice title" } : app.choices }
+
+removeChoice :: App -> App
+removeChoice app = app { choices = fromMaybe Nil $ tail app.choices }
 
 main :: Eff (HalogenEffects ()) Unit
 main = runAff throwException (const (pure unit)) $ do
